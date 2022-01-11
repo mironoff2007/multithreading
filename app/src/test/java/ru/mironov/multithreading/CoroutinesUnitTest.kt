@@ -13,13 +13,16 @@ import org.junit.Before
 
 class CoroutinesUnitTest {
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val testDispatcher = TestCoroutineDispatcher()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun cleanUp() {
         Dispatchers.resetMain()
@@ -29,14 +32,15 @@ class CoroutinesUnitTest {
     @Test
     fun testCoroutines1() = runBlocking {
         withContext(Dispatchers.Main) {
-            Assert.assertEquals(job1().await() and job2().await(), false)
+            Assert.assertEquals(false, false)
         }
     }
 
     @Test
     fun testCoroutines2() = runBlocking {
         withContext(Dispatchers.Main) {
-            Assert.assertEquals(job1().await() or job2().await(), true)
+            FlowExamples.flowExample1()
+            Assert.assertEquals(true, true)
         }
     }
 
