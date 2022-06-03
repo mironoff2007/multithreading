@@ -1,15 +1,11 @@
 package ru.mironov.multithreading
 
-import android.content.Context
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 
 class FlowTest {
@@ -45,5 +41,48 @@ class FlowTest {
         flow.emit(1)
 
         assert(flow.first() == 1)
+    }
+
+    @Test
+    fun testStateFlowCollect() = runBlocking{
+        val flow = MutableStateFlow<Int>(0)
+
+        delay(100)
+        val list = mutableListOf<Int>()
+
+        val job = launch {
+            flow.collect{
+                println("-- $it")
+                list.add(it)
+            }
+        }
+
+        flow.emit(1)
+        delay(100)
+
+        flow.emit(2)
+        delay(100)
+
+        job.cancel() //collect never ends
+        assert(list.size == 2)
+    }
+
+    @Test
+    fun testColdFlowCollect() = runBlocking{
+
+        val list = mutableListOf<Int>()
+
+        val flow = flow {
+            emit(1)
+            delay(100)
+            emit(2)
+        }
+
+        flow.collect {
+            println(it)
+            list.add(it)
+        }
+
+        assert(true)
     }
 }
