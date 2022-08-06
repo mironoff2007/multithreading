@@ -1,8 +1,6 @@
 package ru.mironov.multithreading.rxjava
 
-import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.core.Observer
-import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.core.*
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.functions.BiFunction
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -20,6 +18,7 @@ class RXJavaTest {
 
     @Before
     fun before() {
+        println("---")
     }
 
     @After
@@ -63,6 +62,60 @@ class RXJavaTest {
             Thread.sleep(100)
         }
         assert(true)
+    }
+
+
+    @Test
+    fun testFlatMap(){
+        //not guarantees order
+        println(name.methodName)
+        fun getModifiedObservable(integer: Int): Observable<Int> {
+            return Observable.create(ObservableOnSubscribe<Int> { emitter ->
+                emitter.onNext(integer * 2)
+                emitter.onComplete()
+            })
+                .subscribeOn(Schedulers.io())
+        }
+
+        Observable.just(1,2,3,4,5,6)
+            .flatMap { t -> getModifiedObservable(t) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.computation())
+            .subscribe {
+                println("onNext: $it")
+            }
+
+        Thread.sleep(1000)
+    }
+
+    @Test
+    fun testConcatMap(){
+        //guarantees order
+        val list = mutableListOf<Int>()
+        println(name.methodName)
+        fun getModifiedObservable(integer: Int): Observable<Int> {
+            return Observable.create(ObservableOnSubscribe<Int> { emitter ->
+                emitter.onNext(integer * 2)
+                emitter.onComplete()
+            })
+                .subscribeOn(Schedulers.io())
+        }
+
+        Observable.fromArray(1,2,3,4)
+            .concatMap { t -> getModifiedObservable(t) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.computation())
+            .subscribe {
+                println("onNext: $it")
+                list.add(it)
+            }
+
+        Thread.sleep(1000)
+        var i = 1
+        list.forEach {
+            assert(it == i * 2)
+            i++
+        }
     }
 
     @Test
