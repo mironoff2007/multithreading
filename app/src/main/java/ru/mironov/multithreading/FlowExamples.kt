@@ -1,6 +1,5 @@
 package ru.mironov.multithreading
 
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
