@@ -32,16 +32,14 @@ class ChannelsTest {
         println("start")
         val channels = Channels()
         launch { channels.produce() }
-        println("is empty ${channels.channel.isEmpty}")
-        while (!channels.channel.isClosedForReceive) {
-            val v = channels.channel.receive()
+        println("is empty ${channels.getChannel().isEmpty}")
+        while (!channels.getChannel().isClosedForReceive) {
+            val v = channels.getChannel().receive()
             println("receive ${v}")
-            println("is empty before delay ${channels.channel.isEmpty}")
+            println("is empty before delay ${channels.getChannel().isEmpty}")
             delay(700)
-            println("is empty after delay ${channels.channel.isEmpty}")
+            println("is empty after delay ${channels.getChannel().isEmpty}")
         }
     }
-
-
 
 }
