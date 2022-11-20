@@ -1,4 +1,4 @@
-package ru.mironov.multithreading
+package ru.mironov.multithreading.coroutines
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*

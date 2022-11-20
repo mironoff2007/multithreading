@@ -1,4 +1,4 @@
-package ru.mironov.multithreading
+package ru.mironov.multithreading.coroutines
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
@@ -8,6 +8,7 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Test
 import org.junit.Before
+import ru.mironov.multithreading.FlowExamples
 
 class CoroutinesUnitTest {
 

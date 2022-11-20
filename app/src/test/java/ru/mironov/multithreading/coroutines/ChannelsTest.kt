@@ -1,13 +1,11 @@
-package ru.mironov.multithreading
+package ru.mironov.multithreading.coroutines
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert
 import org.junit.Test
 import org.junit.Before
+import ru.mironov.multithreading.Channels
 
 class ChannelsTest {
 
