@@ -2,6 +2,7 @@ package ru.mironov.multithreading
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.Disposable
@@ -10,6 +11,8 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 class MainActivity : AppCompatActivity() {
 
     private lateinit var dispose: Disposable
+
+    private val b: Button? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,6 +27,7 @@ class MainActivity : AppCompatActivity() {
             }, {
 
             })
+
     }
 
     private fun dataSource(): Observable<Int> {
