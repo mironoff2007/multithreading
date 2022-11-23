@@ -15,6 +15,9 @@ class CoroutinesUnitTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     private val testDispatcher = TestCoroutineDispatcher()
 
+    private val supervisor = SupervisorJob()
+    val scope = CoroutineScope(testDispatcher + supervisor)
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
@@ -79,16 +82,37 @@ class CoroutinesUnitTest {
         //2341
     }
 
+    @Test
+    fun testAsync() = runBlocking {
+        val startTime = System.currentTimeMillis()
+        val job1 = job1()
+        val job2 = job2()
+        val job3 = job3()
 
+        val res1 = job1.await()
+        val res2 = job2.await()
+        val res3 = job3.await()
 
-    suspend fun job1() = GlobalScope.async(Dispatchers.Default) {
+        println(System.currentTimeMillis() - startTime)
+        assert(res1 && res2 && res3)
+    }
+
+    suspend fun job1() = scope.async(Dispatchers.Default) {
         delay(1000)
+        println("job1 done")
         true
     }
 
-    suspend fun job2() = GlobalScope.async(Dispatchers.Default) {
+    suspend fun job2() = scope.async(Dispatchers.Default) {
         delay(500)
-        false
+        println("job2 done")
+        true
+    }
+
+    suspend fun job3() = scope.async(Dispatchers.Default) {
+        delay(1500)
+        println("job3 done")
+        true
     }
 
 }
