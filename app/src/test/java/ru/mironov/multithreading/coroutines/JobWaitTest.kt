@@ -35,7 +35,12 @@ class JobWaitTest {
     @Test
     fun testWaitJob() = runBlocking {
         val test = WaitJob()
+        test.startJob()
         test.doOrWait()
+
+        println("do something after job done")
+        test.doOrWait()
+
         assert(true)
     }
 

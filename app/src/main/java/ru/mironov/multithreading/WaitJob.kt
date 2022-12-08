@@ -7,18 +7,19 @@ class WaitJob(dispatcher: CoroutineDispatcher = Dispatchers.IO) {
     private val supervisor = SupervisorJob()
     private val scope = CoroutineScope(dispatcher + supervisor)
 
-    private val job: Job
-
-    init {
-        job = scope.launch {
-            println("start job")
-            delay(2000)
-            println("end job")
-        }
+    private val job: Job = scope.launch(start = CoroutineStart.LAZY) {
+        println("start job")
+        delay(2000)
+        println("end job")
     }
 
-    suspend fun doOrWait(){
+    fun startJob(){
+        job.start()
+    }
+
+    suspend fun doOrWait() {
         println("doOrWait")
+        if (job.isActive) println("waiting")
         job.join()
         println("done")
     }
