@@ -73,14 +73,12 @@ class CoroutinesExceptionsLaunchTest {
     @Test
     fun testSupervisor() {
         val caught = AtomicBoolean(false)
-        scope.launch() {
             scope.launch(supervisor) {
                 throw Exception("Test exception")
             }
-            scope.launch(supervisor) {
+            scope.launch() {
                 caught.set(true)
                 println("thread without exception")
-            }
             delay(100)
         }
         assert(caught.get())
