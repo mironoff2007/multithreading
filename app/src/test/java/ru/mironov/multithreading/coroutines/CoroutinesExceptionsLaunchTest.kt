@@ -2,11 +2,11 @@ package ru.mironov.multithreading.coroutines
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Test
 import org.junit.Before
+import java.util.concurrent.atomic.AtomicBoolean
 
 class CoroutinesExceptionsLaunchTest {
 
@@ -25,56 +25,10 @@ class CoroutinesExceptionsLaunchTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun cleanUp() {
-        Dispatchers.resetMain()
-        testDispatcher.cleanupTestCoroutines()
+        //Dispatchers.resetMain()
+        //testDispatcher.cleanupTestCoroutines()
     }
 
-    @Test
-    fun testCoroutines1() {
-        scope.launch (testDispatcher) {
-            var flag = false
-            try {
-                throw Exception()
-            }
-            catch (e:Exception)
-            {
-                flag = true
-            }
-            assert(flag)
-        }
-    }
-
-    @Test
-    fun testChildCoroutines() {
-        var flag = false
-        scope.launch(testDispatcher) {
-            scope.launch(testDispatcher) {
-                try {
-                    throw Exception()
-                } catch (e: Exception) {
-                    flag = true
-                }
-            }
-        }
-        assert(flag)
-    }
-
-    @Test
-    fun testChildExceptionMissed() {
-        var flag = false
-        try {
-            scope.launch(testDispatcher) {
-                try {
-                    scope.launch(testDispatcher) { throw Exception("Test exception") }
-                } catch (e: Exception) {
-                    flag = true
-                }
-            }
-        } catch (e: Exception) {
-            flag = true
-        }
-        assert(!flag)
-    }
 
     @Test
     fun testChildExceptionCatchByJoin() {
@@ -91,15 +45,103 @@ class CoroutinesExceptionsLaunchTest {
     }
 
     @Test
-    fun testChildExceptionCatchByScope() {
+    fun testContextSwitchExceptionCatch() {
+        var caught = false
+        scope.launch(testDispatcher) {
+            try {
+                withContext(testDispatcher) { throw Exception("Test exception") }
+            } catch (e: Exception) {
+                caught = true
+            }
+        }
+        assert(caught)
+    }
+
+    @Test
+    fun testExceptionMissed() {
         var flag = false
+        try {
+            scope.launch(testDispatcher) {
+                throw Exception("Test exception")
+            }
+        } catch (e: Exception) {
+            flag = true
+        }
+        assert(!flag)
+    }
+
+    @Test
+    fun testSupervisor() {
+        val caught = AtomicBoolean(false)
+        scope.launch() {
+            scope.launch(supervisor) {
+                throw Exception("Test exception")
+            }
+            scope.launch(supervisor) {
+                caught.set(true)
+                println("thread without exception")
+            }
+            delay(100)
+        }
+        assert(caught.get())
+    }
+
+    @Test
+    fun testWithoutSupervisor() {
+        val notCaught = AtomicBoolean(true)
+        scope.launch() {
+            scope.launch() {
+                throw Exception("Test exception")
+            }
+            scope.launch() {
+                notCaught.set(false)
+                println("thread without exception")
+            }
+            delay(100)
+        }
+        assert(notCaught.get())
+    }
+
+    @Test
+    fun testExceptionHandler() {
+        val caught = AtomicBoolean(false)
+        val handler = CoroutineExceptionHandler { _, exception ->
+            println("CoroutineExceptionHandler got $exception")
+            caught.set(true)
+        }
+        scope.launch() {
+            scope.launch(handler) {
+                throw Exception("Test exception")
+            }
+        }
+        assert(caught.get())
+    }
+
+
+    @Test
+    fun testChildExceptionCatchByScope() {
+        var caught = false
         scope.launch(testDispatcher) {
             try {
                 coroutineScope { launch(testDispatcher) { throw Exception() } }
             } catch (e: Exception) {
-                flag = true
+                caught = true
             }
         }
-        assert(flag)
+        assert(caught)
     }
+
+    @Test
+    fun testChildExceptionMissedByScopeSupervisor() {
+        var caught = false
+        scope.launch(testDispatcher + supervisor) {
+            try {
+                coroutineScope { launch(testDispatcher + supervisor) { throw Exception() } }
+            } catch (e: Exception) {
+                caught = true
+            }
+        }
+        assert(!caught)
+    }
+
 }
