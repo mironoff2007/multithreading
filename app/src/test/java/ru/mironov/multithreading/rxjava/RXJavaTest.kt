@@ -1,30 +1,32 @@
 package ru.mironov.multithreading.rxjava
 
 import io.reactivex.rxjava3.core.*
+import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.functions.BiFunction
 import io.reactivex.rxjava3.schedulers.Schedulers
+import io.reactivex.rxjava3.subjects.BehaviorSubject
+import io.reactivex.rxjava3.subjects.PublishSubject
+import io.reactivex.rxjava3.subjects.ReplaySubject
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import java.util.concurrent.TimeUnit
+import javax.security.auth.Subject
 
 class RXJavaTest {
 
     @get:Rule
     var name: TestName = TestName()
 
+    private val disposable = CompositeDisposable()
+
     @Before
     fun before() {
         println("---")
     }
-
-    @After
-    fun after() {
-    }
-
     @Test
     fun zipTest() {
         println(name.methodName)
@@ -77,13 +79,15 @@ class RXJavaTest {
                 .subscribeOn(Schedulers.io())
         }
 
-        Observable.just(1,2,3,4,5,6)
+        disposable.add(
+            Observable.just(1,2,3,4,5,6)
             .flatMap { t -> getModifiedObservable(t) }
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.computation())
             .subscribe {
                 println("onNext: $it")
             }
+        )
 
         Thread.sleep(1000)
     }
@@ -101,14 +105,16 @@ class RXJavaTest {
                 .subscribeOn(Schedulers.io())
         }
 
-        Observable.fromArray(1,2,3,4)
-            .concatMap { t -> getModifiedObservable(t) }
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.computation())
-            .subscribe {
-                println("onNext: $it")
-                list.add(it)
-            }
+        disposable.add(
+            Observable.fromArray(1, 2, 3, 4)
+                .concatMap { t -> getModifiedObservable(t) }
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+                .subscribe {
+                    println("onNext: $it")
+                    list.add(it)
+                }
+        )
 
         Thread.sleep(1000)
         var i = 1
@@ -124,26 +130,28 @@ class RXJavaTest {
         var thread1Name = ""
         var thread2Name = ""
         var thread3Name = ""
-        Single.just("Some string")
-            .map { str ->
-                str.length.also {
-                    println("map 1 thread " + Thread.currentThread().name)
-                    thread1Name = Thread.currentThread().name
+        disposable.add(
+            Single.just("Some string")
+                .map { str ->
+                    str.length.also {
+                        println("map 1 thread " + Thread.currentThread().name)
+                        thread1Name = Thread.currentThread().name
+                    }
                 }
-            }
-            .subscribeOn(Schedulers.io())
-            .map { length ->
-                42 * length.also {
-                    println("map2 thread " + Thread.currentThread().name)
-                    thread2Name = Thread.currentThread().name
+                .subscribeOn(Schedulers.io())
+                .map { length ->
+                    42 * length.also {
+                        println("map2 thread " + Thread.currentThread().name)
+                        thread2Name = Thread.currentThread().name
+                    }
                 }
-            }
-            .observeOn(Schedulers.computation())
-            .subscribe { number ->
-                println("Sample number = $number")
-                println("subscribe thread " + Thread.currentThread().name)
-                thread3Name = Thread.currentThread().name
-            }
+                .observeOn(Schedulers.computation())
+                .subscribe { number ->
+                    println("Sample number = $number")
+                    println("subscribe thread " + Thread.currentThread().name)
+                    thread3Name = Thread.currentThread().name
+                }
+        )
         Thread.sleep(1000)
 
         assert(thread1Name.contains(IO_THREADS_NAME))
@@ -157,32 +165,60 @@ class RXJavaTest {
         var thread1Name = ""
         var thread2Name = ""
         var thread3Name = ""
-        Single.just("Some string")
-            .map { str ->
-                str.length.also {
-                    println("map 1 thread " + Thread.currentThread().name)
-                    thread1Name = Thread.currentThread().name
+        disposable.add(
+            Single.just("Some string")
+                .map { str ->
+                    str.length.also {
+                        println("map 1 thread " + Thread.currentThread().name)
+                        thread1Name = Thread.currentThread().name
+                    }
                 }
-            }
-            .observeOn(Schedulers.computation())
-            .subscribeOn(Schedulers.io())
-            .map { length ->
-                42 * length.also {
-                    println("map2 thread " + Thread.currentThread().name)
-                    thread2Name = Thread.currentThread().name
+                .observeOn(Schedulers.computation())
+                .subscribeOn(Schedulers.io())
+                .map { length ->
+                    42 * length.also {
+                        println("map2 thread " + Thread.currentThread().name)
+                        thread2Name = Thread.currentThread().name
+                    }
                 }
-            }
-            .subscribe { number ->
-                println("Sample number = $number")
-                println("subscribe thread " + Thread.currentThread().name)
-                thread3Name = Thread.currentThread().name
-            }
+                .subscribe { number ->
+                    println("Sample number = $number")
+                    println("subscribe thread " + Thread.currentThread().name)
+                    thread3Name = Thread.currentThread().name
+                }
+        )
         Thread.sleep(1000)
 
         assert(thread1Name.contains(IO_THREADS_NAME))
         assert(thread2Name.contains(COMPUTATION_THREADS_NAME))
         assert(thread3Name.contains(COMPUTATION_THREADS_NAME))
     }
+
+    @Test
+    fun schedulersTest3() {
+        println(name.methodName)
+
+        val subject: BehaviorSubject<Int> = BehaviorSubject.create()
+        subject.onNext(0)
+
+        disposable.add(
+            subject.subscribe { println("before $it") }
+        )
+
+        subject.onNext(1)
+
+        disposable.add(
+            subject.subscribe { println("after $it") }
+        )
+
+        Thread.sleep(1000)
+    }
+
+    @After
+    fun after() {
+        disposable.dispose()
+    }
+
 
     companion object{
         const val IO_THREADS_NAME = "RxCachedThreadScheduler"
